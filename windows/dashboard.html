@@ -1,5 +1,5 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>ClaudeGotchi — Dashboard</title>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ClaudeGotchi — Dashboard</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -10,7 +10,7 @@
   .sub { font-size: 11px; letter-spacing: 1.5px; color: #999; font-weight: 600; }
   .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 99px; background: rgba(255,255,255,.1); font-size: 12px; font-weight: 600; margin-left: 8px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
-  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; gap: 16px; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr) minmax(240px, 320px); gap: 16px; }
   .panel { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
   .panel > h2 { margin: 0; font-size: 11px; letter-spacing: 1.2px; font-weight: 800; display: flex; justify-content: space-between; }
   .card { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid transparent; cursor: pointer; }
@@ -27,6 +27,14 @@
   .hint { font-size: 12px; color: #999; text-align: center; }
   .grp { display: flex; flex-direction: column; gap: 6px; } .grp > b { font-size: 10px; color: #999; letter-spacing: 1px; }
   label { display: flex; align-items: center; gap: 8px; }
+  /* stretto: colonne impilate, pagina scorre */
+  @media (max-width: 900px) {
+    body { height: auto; min-height: 100vh; }
+    main { grid-template-columns: 1fr; }
+    .panel { overflow: visible; }
+    #stage { height: 220px; } #big { width: 180px; height: 180px; }
+    header { flex-wrap: wrap; gap: 8px; }
+  }
 </style></head>
 <body>
 <header>

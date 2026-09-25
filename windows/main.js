@@ -200,7 +200,7 @@ function createPet() {
 
 function openDashboard() {
   if (dash && !dash.isDestroyed()) return dash.focus();
-  dash = new BrowserWindow({ width: 1040, height: 700, minWidth: 900, minHeight: 620, title: 'ClaudeGotchi — Dashboard', backgroundColor: '#100e17', icon: path.join(__dirname, 'icon.png'), autoHideMenuBar: true, webPreferences: web });
+  dash = new BrowserWindow({ width: 1040, height: 700, minWidth: 480, minHeight: 480, title: 'ClaudeGotchi — Dashboard', backgroundColor: '#100e17', icon: path.join(__dirname, 'icon.png'), autoHideMenuBar: true, webPreferences: web });
   dash.loadFile('dashboard.html');
 }
 
