@@ -46,11 +46,15 @@ final class RateCacheWatcher: ObservableObject {
     private var source: DispatchSourceFileSystemObject?
     private var fd: Int32 = -1
     private let queue = DispatchQueue(label: "claudegotchi.ratecache")
+    private var probeTimer: Timer?
+    private static let probeInterval: TimeInterval = 600
 
     init(path: String = "~/.claude/rate-cache.json") {
         self.url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
         reload()
         openWatch()
+        probe()
+        probeTimer = Timer.scheduledTimer(withTimeInterval: Self.probeInterval, repeats: true) { [weak self] _ in self?.probe() }
     }
 
     deinit { closeWatch() }
@@ -80,6 +84,42 @@ final class RateCacheWatcher: ObservableObject {
         }
         source = src
         src.resume()
+    }
+
+    // Fallback senza statusline (es. estensione VS Code): un messaggio minimo in `claude -p` emette un
+    // rate_limit_event con l'utilizzo 5h/7d. --setting-sources "" evita che partano gli hook del pet.
+    // Parte solo se rate-cache.json è più vecchio di probeInterval. Costa un messaggio haiku.
+    private func probe() {
+        queue.async { [url] in
+            let mtime = (try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) ?? .distantPast
+            guard Date().timeIntervalSince(mtime) >= Self.probeInterval else { return }
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            // Shell di login: un'app grafica non ha il PATH dove sta `claude`.
+            p.arguments = ["-lc", "claude -p ok --model haiku --setting-sources '' --output-format stream-json --verbose 2>/dev/null"]
+            p.currentDirectoryURL = FileManager.default.temporaryDirectory
+            let pipe = Pipe()
+            p.standardOutput = pipe
+            guard (try? p.run()) != nil else { return }
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            p.waitUntilExit()
+            guard let out = String(data: data, encoding: .utf8),
+                  let line = out.split(separator: "\n").first(where: { $0.contains("\"rate_limit_event\"") }),
+                  let obj = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
+                  let w = (obj["rate_limit_info"] as? [String: Any])?["unifiedWindows"] as? [String: Any] else { return }
+            func win(_ k: String) -> (Int, String) {
+                let d = w[k] as? [String: Any]
+                let u = (d?["utilization"] as? Double) ?? 0 // frazione 0-1
+                let r = (d?["resetsAt"] as? Double).map { String(Int($0)) } ?? ""
+                return (Int((u * 100).rounded()), r)
+            }
+            var json = (try? JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]) ?? [:]
+            let (r5, r5at) = win("five_hour"), (r7, r7at) = win("seven_day")
+            json["r5"] = r5; json["r7"] = r7
+            json["r5_resets_at"] = r5at; json["r7_resets_at"] = r7at
+            json["ts"] = Int(Date().timeIntervalSince1970)
+            if let out = try? JSONSerialization.data(withJSONObject: json) { try? out.write(to: url, options: .atomic) }
+        }
     }
 
     private func closeWatch() { source?.cancel(); source = nil }

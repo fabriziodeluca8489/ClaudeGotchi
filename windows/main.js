@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
+const { execFile } = require('child_process');
 const CG = require('./shared');
 
 const PORT = 47823;
@@ -39,6 +40,32 @@ function loadRate() {
   const n = (v) => Number(v) || 0; // i reset possono essere stringa o numero
   const next = { r5: n(j.r5), r7: n(j.r7), r5ResetsAt: n(j.r5_resets_at), r7ResetsAt: n(j.r7_resets_at), contextPct: n(j.context_pct), model: j.model || '' };
   if (JSON.stringify(next) !== JSON.stringify(rate)) { rate = next; broadcast('rate', rate); }
+}
+
+// Fallback senza statusline (es. estensione VS Code): un messaggio minimo in `claude -p` emette un
+// rate_limit_event con l'utilizzo 5h/7d. --setting-sources "" evita che partano gli hook del pet.
+// ponytail: costa un messaggio haiku ogni PROBE_MS, solo se rate-cache.json e' piu' vecchio.
+const PROBE_MS = 10 * 60 * 1000;
+function probeRate() {
+  let mtime = 0;
+  try { mtime = fs.statSync(rateFile()).mtimeMs; } catch {}
+  if (Date.now() - mtime < PROBE_MS) return;
+  execFile('claude', ['-p', 'ok', '--model', 'haiku', '--setting-sources', '', '--output-format', 'stream-json', '--verbose'],
+    { cwd: os.tmpdir(), timeout: 60000, maxBuffer: 1 << 24, shell: process.platform === 'win32' }, (err, out) => {
+      const line = String(out || '').split('\n').find((l) => l.includes('"rate_limit_event"'));
+      if (!line) return;
+      try {
+        const w = JSON.parse(line).rate_limit_info.unifiedWindows;
+        let old = {};
+        try { old = JSON.parse(fs.readFileSync(rateFile(), 'utf8')); } catch {}
+        const pct = (x) => Math.round(((x && x.utilization) || 0) * 100); // utilization: frazione 0-1
+        fs.writeFileSync(rateFile(), JSON.stringify({
+          ...old, r5: pct(w.five_hour), r7: pct(w.seven_day),
+          r5_resets_at: String((w.five_hour || {}).resetsAt || ''), r7_resets_at: String((w.seven_day || {}).resetsAt || ''),
+          ts: Math.floor(Date.now() / 1000),
+        }));
+      } catch {}
+    });
 }
 
 // ---------- Stato (equivalente degli hook bash) ----------
@@ -216,6 +243,7 @@ app.whenReady().then(() => {
   loadSettings();
   startServer();
   loadRate(); fs.watchFile(rateFile(), { interval: 2000 }, loadRate);
+  probeRate(); setInterval(probeRate, PROBE_MS);
   if (process.platform === 'darwin') app.dock.setIcon(path.join(__dirname, 'icon.png'));
   createPet();
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'tray.png')).resize({ width: 16, height: 16 }));
