@@ -60,7 +60,7 @@
 </main>
 <script src="shared.js"></script><script src="sprite.js"></script>
 <script>
-let S, ST, catalog, hooks = false, events = 0, sel = 'idle';
+let S, ST, RATE, catalog, hooks = false, events = 0, sel = 'idle';
 const $ = (id) => document.getElementById(id);
 const big = new SpriteEl($('big'));
 const thumbs = {}; // un SpriteEl per riga, riusati tra i render
@@ -139,8 +139,9 @@ $('donate').onclick = (e) => { e.preventDefault(); cg.openDonate(); };
 $('reset').onclick = () => cg.resetAnimations();
 $('hookBtn').onclick = async () => { hooks = await (hooks ? cg.hooksUninstall() : cg.hooksInstall()); render(); };
 
-cg.init().then((i) => { S = i.settings; ST = i.state; catalog = i.catalog; hooks = i.hooks; events = i.eventCount; render(); });
+cg.init().then((i) => { S = i.settings; ST = i.state; RATE = i.rate; catalog = i.catalog; hooks = i.hooks; events = i.eventCount; render(); });
 cg.onSettings((s) => { S = s; render(); });
+cg.onRate((r) => { RATE = r; });
 cg.onState((st) => {
   ST = st; events = Math.max(events, 1); render();
 });

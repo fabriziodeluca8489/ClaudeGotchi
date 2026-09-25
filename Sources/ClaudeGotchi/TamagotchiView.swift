@@ -256,12 +256,18 @@ struct StatsRows: View {
         case .ctxTokens: line("ctx", compact(st.tokensInput))
         case .outTokens: line("out", compact(st.tokensOutput))
         case .toolCalls: line("tool", "\(st.toolCalls)")
-        case .limit5h:   line("5h", "\(cache.r5)", reset: resetLabel(cache.r5ResetsAt, "HH:mm"))
-        case .limit7d:   line("7d", "\(cache.r7)", reset: resetLabel(cache.r7ResetsAt, "dd/MM"))
+        case .limit5h:   limitLine("5h", cache.r5, cache.r5ResetsAt, "HH:mm")
+        case .limit7d:   limitLine("7d", cache.r7, cache.r7ResetsAt, "dd/MM")
         case .ctxPct:    line("ctx", "\(cache.contextPct)%")
         case .model:     line("mod", cache.model.isEmpty ? "—" : cache.model)
         case .caption, .tool: EmptyView()
         }
+    }
+
+    // Reset già passato = dato stantio (statusline non aggiorna la cache): mostra "—".
+    private func limitLine(_ label: String, _ pct: Int, _ resetsAt: TimeInterval, _ format: String) -> some View {
+        let stale = resetsAt > 0 && resetsAt < Date().timeIntervalSince1970
+        return line(label, stale ? "—" : "\(pct)", reset: stale ? "" : resetLabel(resetsAt, format))
     }
 
     private func line(_ label: String, _ value: String, reset: String = "") -> some View {

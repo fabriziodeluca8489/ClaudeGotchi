@@ -35,11 +35,15 @@
     { id: 'ctxTokens', label: 'Token contesto' },
     { id: 'outTokens', label: 'Token output' },
     { id: 'toolCalls', label: 'Tool calls' },
+    { id: 'limit5h', label: 'Limite 5h' },
+    { id: 'limit7d', label: 'Limite 7 giorni' },
+    { id: 'ctxPct', label: 'Contesto %' },
+    { id: 'model', label: 'Modello' },
   ];
   const DEFAULTS = {
     skin: 'dev', size: 'medium', showStats: true, statsAlways: false,
     bgTransparent: true, bgColor: 'stato', anim: {}, fps: {},
-    info: ['caption', 'tool', 'ctxTokens', 'outTokens', 'toolCalls'], sleepMinutes: 10,
+    info: ['caption', 'tool', 'limit5h', 'limit7d', 'ctxPct'], sleepMinutes: 10,
   };
 
   const skinOf = (s) => SKINS.find((k) => k.id === s.skin) || SKINS[0];
@@ -72,6 +76,28 @@
   }
   const fpsFor = (s, a) => s.fps[skinOf(s).prefix + a] || 8;
 
-  const api = { DONATE_URL, SKINS, SIZES, ACTIVITIES, TINT, BGS, INFO, DEFAULTS, skinOf, sizeOf, activityFrom, sheetFor, fpsFor };
+  // Righe statistiche scelte (max 3, come su Mac). Limite con reset passato = dato stantio -> "—".
+  const compact = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n));
+  const pad = (n) => String(n).padStart(2, '0');
+  function statRows(st, rate, info, now = Date.now()) {
+    const limit = (label, pct, at, fmt) => {
+      const stale = at > 0 && at * 1000 < now;
+      const d = new Date(at * 1000);
+      const reset = stale || !at ? '' : '→' + (fmt === 'time' ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`);
+      return [label, stale ? '—' : String(pct), reset];
+    };
+    const all = {
+      ctxTokens: () => ['ctx', compact(st.tokensInput), ''],
+      outTokens: () => ['out', compact(st.tokensOutput), ''],
+      toolCalls: () => ['tool', String(st.toolCalls), ''],
+      limit5h: () => limit('5h', rate.r5, rate.r5ResetsAt, 'time'),
+      limit7d: () => limit('7d', rate.r7, rate.r7ResetsAt, 'date'),
+      ctxPct: () => ['ctx', rate.contextPct + '%', ''],
+      model: () => ['mod', rate.model || '—', ''],
+    };
+    return Object.keys(all).filter((k) => info.includes(k)).slice(0, 3).map((k) => all[k]());
+  }
+
+  const api = { statRows, DONATE_URL, SKINS, SIZES, ACTIVITIES, TINT, BGS, INFO, DEFAULTS, skinOf, sizeOf, activityFrom, sheetFor, fpsFor };
   if (typeof module !== 'undefined') module.exports = api; else root.CG = api;
 })(this);

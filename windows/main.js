@@ -30,6 +30,17 @@ function loadCatalog() {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// ---------- Limiti: ~/.claude/rate-cache.json, scritto dalla statusline di Claude Code ----------
+const rateFile = () => path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'rate-cache.json');
+let rate = { r5: 0, r7: 0, r5ResetsAt: 0, r7ResetsAt: 0, contextPct: 0, model: '' };
+function loadRate() {
+  let j = {};
+  try { j = JSON.parse(fs.readFileSync(rateFile(), 'utf8')); } catch {}
+  const n = (v) => Number(v) || 0; // i reset possono essere stringa o numero
+  const next = { r5: n(j.r5), r7: n(j.r7), r5ResetsAt: n(j.r5_resets_at), r7ResetsAt: n(j.r7_resets_at), contextPct: n(j.context_pct), model: j.model || '' };
+  if (JSON.stringify(next) !== JSON.stringify(rate)) { rate = next; broadcast('rate', rate); }
+}
+
 // ---------- Stato (equivalente degli hook bash) ----------
 let state = { state: 'idle', tool: '', taskSummary: '', tokensInput: 0, tokensOutput: 0, toolCalls: 0, sessionId: '', timestamp: new Date().toISOString() };
 let eventCount = 0;
@@ -102,6 +113,20 @@ function readClaudeSettings() {
 }
 const isOurs = (h) => typeof h.command === 'string' && h.command.includes(MARK);
 
+// Statusline: fornisce i limiti 5h/7d. Non sovrascrive una statusline dell'utente.
+const SL_NAME = 'claudegotchi-statusline.js';
+function patchStatusLine(json, add) {
+  const ours = json.statusLine && String(json.statusLine.command || '').includes(SL_NAME);
+  const dest = path.join(path.dirname(settingsPath()), SL_NAME);
+  if (add && (!json.statusLine || ours)) {
+    fs.writeFileSync(dest, fs.readFileSync(path.join(__dirname, 'statusline.js'))); // copia fuori dall'asar
+    json.statusLine = { type: 'command', command: `node "${dest}"` };
+  } else if (!add && ours) {
+    delete json.statusLine;
+    try { fs.unlinkSync(dest); } catch {}
+  }
+}
+
 function patchHooks(add) {
   const p = settingsPath();
   const json = readClaudeSettings();
@@ -117,6 +142,7 @@ function patchHooks(add) {
     if (arr.length) hooks[event] = arr; else delete hooks[event];
   }
   if (Object.keys(hooks).length) json.hooks = hooks; else delete json.hooks;
+  patchStatusLine(json, add);
   fs.writeFileSync(p, JSON.stringify(json, null, 2));
 }
 function hooksInstalled() {
@@ -172,7 +198,7 @@ function updateSettings(patch) {
 }
 
 // ---------- IPC ----------
-ipcMain.handle('init', () => ({ settings, state, catalog: loadCatalog(), hooks: hooksInstalled(), eventCount }));
+ipcMain.handle('init', () => ({ settings, state, catalog: loadCatalog(), hooks: hooksInstalled(), eventCount, rate }));
 ipcMain.handle('set', (_, p) => updateSettings(p));
 ipcMain.handle('reset-anim', () => updateSettings({ anim: {}, fps: {} }));
 ipcMain.handle('hooks:status', () => ({ hooks: hooksInstalled(), eventCount }));
@@ -189,6 +215,7 @@ ipcMain.on('beep', () => shell.beep());
 app.whenReady().then(() => {
   loadSettings();
   startServer();
+  loadRate(); fs.watchFile(rateFile(), { interval: 2000 }, loadRate);
   if (process.platform === 'darwin') app.dock.setIcon(path.join(__dirname, 'icon.png'));
   createPet();
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'tray.png')).resize({ width: 16, height: 16 }));

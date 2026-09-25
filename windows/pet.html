@@ -17,9 +17,8 @@
 <div id="root"><div id="sprite"></div><div id="info"></div><div id="stats"></div></div>
 <script src="shared.js"></script><script src="sprite.js"></script>
 <script>
-let S, ST, catalog, hovering = false, prevState = 'idle';
+let S, ST, RATE, catalog, hovering = false, prevState = 'idle';
 const root = document.getElementById('root'), sp = new SpriteEl(document.getElementById('sprite'));
-const compact = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n));
 
 function caption() {
   switch (ST.state) {
@@ -40,12 +39,11 @@ function render() {
   // Sfondo: quasi trasparente (alpha 0.01) resta cliccabile e trascinabile.
   const bg = S.bgColor === 'stato' ? CG.TINT[ST.state] : CG.BGS.find((b) => b.id === S.bgColor).color;
   root.style.background = S.bgTransparent ? 'rgba(0,0,0,0.01)' : bg;
-  const rows = [['ctxTokens', 'ctx', compact(ST.tokensInput)], ['outTokens', 'out', compact(ST.tokensOutput)], ['toolCalls', 'tool', ST.toolCalls]]
-    .filter((r) => S.info.includes(r[0]));
+  const rows = CG.statRows(ST, RATE, S.info);
   const stats = document.getElementById('stats'), info = document.getElementById('info');
   const showStats = S.showStats && rows.length && (hovering || S.statsAlways);
   stats.style.display = showStats ? 'block' : 'none';
-  stats.innerHTML = rows.map((r) => `<div><span>${r[1]}</span><span>${r[2]}</span></div>`).join('');
+  stats.innerHTML = rows.map((r) => `<div><span>${r[0]}</span><span>${r[1]}</span><span style="margin-left:auto;opacity:.6">${r[2]}</span></div>`).join('');
   info.style.display = !showStats && S.info.includes('caption') ? 'block' : 'none';
   info.textContent = caption();
 }
@@ -58,9 +56,10 @@ function onState(st) {
   prevState = st.state; ST = st; render();
 }
 
-cg.init().then((i) => { S = i.settings; ST = i.state; catalog = i.catalog; render(); });
+cg.init().then((i) => { S = i.settings; ST = i.state; RATE = i.rate; catalog = i.catalog; render(); });
 cg.onSettings((s) => { S = s; render(); });
 cg.onState(onState);
+cg.onRate((r) => { RATE = r; render(); });
 setInterval(render, 30000); // idle -> dorme
 
 document.addEventListener('mouseenter', () => { hovering = true; render(); });

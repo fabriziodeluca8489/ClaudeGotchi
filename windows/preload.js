@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('cg', {
   setSettings: (p) => ipcRenderer.invoke('set', p),
   resetAnimations: () => ipcRenderer.invoke('reset-anim'),
   onSettings: (cb) => ipcRenderer.on('settings', (_, v) => cb(v)),
+  onRate: (cb) => ipcRenderer.on('rate', (_, v) => cb(v)),
   onState: (cb) => ipcRenderer.on('state', (_, v) => cb(v)),
   dragStart: (x, y) => ipcRenderer.send('drag-start', x, y),
   dragMove: (x, y) => ipcRenderer.send('drag-move', x, y),
