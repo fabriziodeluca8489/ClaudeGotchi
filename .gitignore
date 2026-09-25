@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+ClaudeGotchi.app/
+*.bak
+node_modules/
+dist/
+resource/
+__pycache__/

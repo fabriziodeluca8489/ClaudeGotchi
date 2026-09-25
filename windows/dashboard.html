@@ -1,0 +1,148 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ClaudeGotchi — Dashboard</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; padding: 20px; display: flex; flex-direction: column; gap: 16px; color: #eee;
+         font: 14px 'Segoe UI', sans-serif; background: linear-gradient(135deg, #3d264d, #12101a); }
+  header { display: flex; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 26px; font-weight: 800; }
+  .sub { font-size: 11px; letter-spacing: 1.5px; color: #999; font-weight: 600; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 99px; background: rgba(255,255,255,.1); font-size: 12px; font-weight: 600; margin-left: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #888; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; gap: 16px; }
+  .panel { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .panel > h2 { margin: 0; font-size: 11px; letter-spacing: 1.2px; font-weight: 800; display: flex; justify-content: space-between; }
+  .card { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid transparent; cursor: pointer; }
+  .card.on { background: rgba(255,255,255,.14); border-color: #8b7cf6; }
+  .card .t { font-weight: 600; font-size: 13px; } .card .s { font-size: 10px; color: #999; }
+  .thumb { width: 44px; height: 44px; border-radius: 8px; background: rgba(255,255,255,.08); flex: none; }
+  #stage { height: 300px; border-radius: 28px; position: relative; display: flex; align-items: center; justify-content: center; }
+  #big { width: 240px; height: 240px; }
+  #stage .pill { position: absolute; bottom: 10px; margin: 0; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  select, button { background: rgba(255,255,255,.1); color: #eee; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 5px 8px; font: inherit; }
+  button { cursor: pointer; } button:hover { background: rgba(255,255,255,.18); }
+  .stats { display: flex; } .stats div { flex: 1; text-align: center; } .stats b { display: block; font-size: 15px; } .stats span { font-size: 10px; color: #999; }
+  .hint { font-size: 12px; color: #999; text-align: center; }
+  .grp { display: flex; flex-direction: column; gap: 6px; } .grp > b { font-size: 10px; color: #999; letter-spacing: 1px; }
+  label { display: flex; align-items: center; gap: 8px; }
+</style></head>
+<body>
+<header>
+  <div><h1>ClaudeGotchi</h1><div class="sub">FLOATING COMPANION PER CLAUDE CODE</div></div>
+  <div><a class="pill" href="#" id="donate" style="color:inherit;text-decoration:none">☕ Dona con PayPal</a><span class="pill"><i class="dot" id="conn"></i><span id="connTxt"></span></span><span class="pill">Windows</span></div>
+</header>
+<main>
+  <section class="panel"><h2>ATTIVITÀ <span id="nAct"></span></h2><div id="acts" style="display:flex;flex-direction:column;gap:8px"></div></section>
+  <section style="display:flex;flex-direction:column;gap:12px;min-height:0">
+    <div class="panel"><h2 id="prevTitle"></h2>
+      <div id="stage"><div id="big"></div><span class="pill"><i class="dot" id="skinDot"></i><span id="skinName"></span></span></div>
+      <div class="row"><select id="sheet" style="flex:1"></select><span style="color:#999">FPS</span><input id="fps" type="range" min="1" max="15"><span id="fpsN" style="width:22px"></span></div>
+      <div class="hint">Trascina · Passa il mouse per le stats · Click destro per il menu</div>
+    </div>
+    <div class="panel"><h2>LIVE</h2>
+      <div class="stats" id="live"></div>
+    </div>
+  </section>
+  <section class="panel" style="min-width:0"><h2>SKIN <span id="nSkin"></span></h2><div id="skins" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="grp"><b>CLAUDE CODE</b><div class="row"><span id="hookTxt" style="flex:1"></span><button id="hookBtn"></button></div></div>
+    <div class="grp"><b>ASPETTO</b>
+      <label>Dimensione <select id="size"></select></label>
+      <label>Sfondo <select id="bg"></select></label>
+      <label><input type="checkbox" id="bgT"> Sfondo trasparente</label></div>
+    <div class="grp"><b>INFO SOTTO IL PERSONAGGIO</b><div id="info" class="grp"></div>
+      <label><input type="checkbox" id="showStats"> Mostra statistiche</label>
+      <label><input type="checkbox" id="always"> Sempre visibili</label></div>
+    <div class="grp"><b>SONNO</b><label>Dorme dopo <input id="sleep" type="number" min="1" max="120" style="width:60px"> min</label></div>
+    <button id="reset">Ripristina animazioni predefinite</button>
+  </section>
+</main>
+<script src="shared.js"></script><script src="sprite.js"></script>
+<script>
+let S, ST, catalog, hooks = false, events = 0, sel = 'idle';
+const $ = (id) => document.getElementById(id);
+const big = new SpriteEl($('big'));
+const thumbs = {}; // un SpriteEl per riga, riusati tra i render
+
+function fill(sel_, items, val) { sel_.innerHTML = items.map((i) => `<option value="${i.id}">${i.label}</option>`).join(''); sel_.value = val; }
+
+function render() {
+  if (!S || !ST) return;
+  const tint = CG.TINT[ST.state];
+  $('conn').style.background = events ? '#59cc66' : '#888';
+  $('connTxt').textContent = events ? 'Claude Code collegato' : 'In attesa di Claude Code';
+  $('nAct').innerHTML = `<span class="pill" style="margin:0">${CG.ACTIVITIES.length}</span>`;
+  $('nSkin').innerHTML = `<span class="pill" style="margin:0">${CG.SKINS.length}</span>`;
+
+  // Colonna attività (le righe si ricreano solo se cambiano skin/selezione)
+  $('acts').innerHTML = '';
+  for (const a of CG.ACTIVITIES) {
+    const sh = CG.sheetFor(S, catalog, a.id);
+    const d = document.createElement('div');
+    d.className = 'card' + (a.id === sel ? ' on' : '');
+    d.innerHTML = `<div class="thumb"></div><div><div class="t">${a.label}</div><div class="s">${CG.fpsFor(S, a.id)} fps · ${sh.name.replace(/_/g, ' ')}</div></div>`;
+    d.onclick = () => { sel = a.id; render(); };
+    $('acts').appendChild(d);
+    new SpriteEl(d.firstChild).set(sh, CG.fpsFor(S, a.id));
+  }
+
+  // Anteprima
+  const def = CG.ACTIVITIES.find((a) => a.id === sel);
+  const sh = CG.sheetFor(S, catalog, sel);
+  $('prevTitle').textContent = 'ANTEPRIMA · ' + def.label.toUpperCase();
+  const bg = S.bgColor === 'stato' ? tint : CG.BGS.find((b) => b.id === S.bgColor).color;
+  $('stage').style.background = bg + '59';
+  $('skinName').textContent = CG.skinOf(S).label; $('skinDot').style.background = tint;
+  big.set(sh, CG.fpsFor(S, sel));
+  fill($('sheet'), catalog.map((c) => ({ id: c.file, label: c.name.replace(/_/g, ' ') })), sh.file);
+  $('fps').value = CG.fpsFor(S, sel); $('fpsN').textContent = CG.fpsFor(S, sel);
+
+  // Live
+  const live = [['Stato', ST.state, tint], ['Tool', ST.tool || '—'], ['Token in', ST.tokensInput], ['Token out', ST.tokensOutput], ['Tool call', ST.toolCalls]];
+  $('live').innerHTML = live.map((l) => `<div><b style="color:${l[2] || 'inherit'}">${l[1]}</b><span>${l[0]}</span></div>`).join('');
+
+  // Skin
+  $('skins').innerHTML = '';
+  for (const k of CG.SKINS) {
+    const d = document.createElement('div');
+    d.className = 'card' + (k.id === S.skin ? ' on' : '');
+    const idle = catalog.find((c) => c.name === k.prefix + 'idle');
+    d.innerHTML = `<div class="thumb" style="width:48px;height:48px"></div><div class="t" style="flex:1">${k.label}</div><span>${k.id === S.skin ? '✓' : ''}</span>`;
+    d.onclick = () => cg.setSettings({ skin: k.id });
+    $('skins').appendChild(d);
+    new SpriteEl(d.firstChild).set(idle, 8);
+  }
+
+  // Impostazioni
+  $('hookTxt').textContent = hooks ? 'Hook installati ✓' : 'Hook non installati';
+  $('hookBtn').textContent = hooks ? 'Rimuovi' : 'Installa';
+  fill($('size'), CG.SIZES, S.size); fill($('bg'), CG.BGS, S.bgColor);
+  $('bgT').checked = S.bgTransparent; $('showStats').checked = S.showStats; $('always').checked = S.statsAlways;
+  $('sleep').value = S.sleepMinutes;
+  $('info').innerHTML = CG.INFO.map((f) => `<label><input type="checkbox" data-f="${f.id}" ${S.info.includes(f.id) ? 'checked' : ''}> ${f.label}</label>`).join('');
+  document.querySelectorAll('[data-f]').forEach((c) => (c.onchange = () =>
+    cg.setSettings({ info: CG.INFO.map((f) => f.id).filter((id) => (id === c.dataset.f ? c.checked : S.info.includes(id))) })));
+}
+
+// Salva anim/fps per skin+attività (chiave "<prefisso><attività>").
+const key = (a) => CG.skinOf(S).prefix + a;
+$('sheet').onchange = (e) => cg.setSettings({ anim: { ...S.anim, [key(sel)]: e.target.value } });
+$('fps').oninput = (e) => cg.setSettings({ fps: { ...S.fps, [key(sel)]: +e.target.value } });
+$('size').onchange = (e) => cg.setSettings({ size: e.target.value });
+$('bg').onchange = (e) => cg.setSettings({ bgColor: e.target.value });
+$('bgT').onchange = (e) => cg.setSettings({ bgTransparent: e.target.checked });
+$('showStats').onchange = (e) => cg.setSettings({ showStats: e.target.checked });
+$('always').onchange = (e) => cg.setSettings({ statsAlways: e.target.checked });
+$('sleep').onchange = (e) => cg.setSettings({ sleepMinutes: Math.min(120, Math.max(1, +e.target.value || 10)) });
+$('donate').onclick = (e) => { e.preventDefault(); cg.openDonate(); };
+$('reset').onclick = () => cg.resetAnimations();
+$('hookBtn').onclick = async () => { hooks = await (hooks ? cg.hooksUninstall() : cg.hooksInstall()); render(); };
+
+cg.init().then((i) => { S = i.settings; ST = i.state; catalog = i.catalog; hooks = i.hooks; events = i.eventCount; render(); });
+cg.onSettings((s) => { S = s; render(); });
+cg.onState((st) => {
+  ST = st; events = Math.max(events, 1); render();
+});
+window.onresize = () => { big.key = null; render(); };
+</script></body></html>

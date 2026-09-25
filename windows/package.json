@@ -1,0 +1,42 @@
+{
+  "name": "claudegotchi",
+  "version": "1.0.0",
+  "description": "Compagno flottante per Claude Code",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win portable --x64",
+    "build:mac": "electron-builder --mac zip"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "app.claudegotchi",
+    "productName": "ClaudeGotchi",
+    "files": [
+      "*.js",
+      "*.html",
+      "*.png",
+      "assets/**"
+    ],
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "ClaudeGotchi.exe"
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": "zip",
+      "identity": null
+    }
+  },
+  "author": "Fabrizio De Luca",
+  "license": "MIT"
+}

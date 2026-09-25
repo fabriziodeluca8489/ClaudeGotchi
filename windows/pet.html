@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; overflow: hidden; background: transparent; user-select: none; font-family: 'Segoe UI', sans-serif; }
+  #root { width: 120px; height: 150px; box-sizing: border-box; padding: 8px; border-radius: 18px;
+          display: flex; flex-direction: column; align-items: center; gap: 4px; color: #888; }
+  #sprite { width: 96px; height: 96px; }
+  #info { font-size: 10px; font-weight: 500; text-align: center; white-space: nowrap; }
+  #stats { width: 100%; font: 9px Consolas, monospace; display: none; }
+  #stats div { display: flex; gap: 4px; }
+  #stats span:first-child { width: 22px; }
+  .celebrate #sprite { animation: jump .5s ease-in-out 3, flash .3s 4; }
+  @keyframes jump { 50% { transform: translateY(-14px); } }
+  @keyframes flash { 50% { filter: brightness(1.6); } }
+</style></head>
+<body>
+<div id="root"><div id="sprite"></div><div id="info"></div><div id="stats"></div></div>
+<script src="shared.js"></script><script src="sprite.js"></script>
+<script>
+let S, ST, catalog, hovering = false, prevState = 'idle';
+const root = document.getElementById('root'), sp = new SpriteEl(document.getElementById('sprite'));
+const compact = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n));
+
+function caption() {
+  switch (ST.state) {
+    case 'idle': return 'in attesa';
+    case 'working': return !ST.tool || !S.info.includes('tool') ? 'al lavoro…' : ST.tool;
+    case 'waiting': return 'tocca a te ✋';
+    case 'done': return 'fatto! 🎉';
+    default: return 'ops…';
+  }
+}
+
+function render() {
+  if (!S || !ST) return;
+  const sc = CG.sizeOf(S).scale;
+  document.body.style.zoom = sc;
+  const a = CG.activityFrom(ST, Date.now(), S.sleepMinutes * 60000);
+  sp.set(CG.sheetFor(S, catalog, a), CG.fpsFor(S, a));
+  // Sfondo: quasi trasparente (alpha 0.01) resta cliccabile e trascinabile.
+  const bg = S.bgColor === 'stato' ? CG.TINT[ST.state] : CG.BGS.find((b) => b.id === S.bgColor).color;
+  root.style.background = S.bgTransparent ? 'rgba(0,0,0,0.01)' : bg;
+  const rows = [['ctxTokens', 'ctx', compact(ST.tokensInput)], ['outTokens', 'out', compact(ST.tokensOutput)], ['toolCalls', 'tool', ST.toolCalls]]
+    .filter((r) => S.info.includes(r[0]));
+  const stats = document.getElementById('stats'), info = document.getElementById('info');
+  const showStats = S.showStats && rows.length && (hovering || S.statsAlways);
+  stats.style.display = showStats ? 'block' : 'none';
+  stats.innerHTML = rows.map((r) => `<div><span>${r[1]}</span><span>${r[2]}</span></div>`).join('');
+  info.style.display = !showStats && S.info.includes('caption') ? 'block' : 'none';
+  info.textContent = caption();
+}
+
+function onState(st) {
+  if (st.state === 'done' && prevState !== 'done') {
+    root.classList.add('celebrate'); cg.beep();
+    setTimeout(() => root.classList.remove('celebrate'), 1600);
+  }
+  prevState = st.state; ST = st; render();
+}
+
+cg.init().then((i) => { S = i.settings; ST = i.state; catalog = i.catalog; render(); });
+cg.onSettings((s) => { S = s; render(); });
+cg.onState(onState);
+setInterval(render, 30000); // idle -> dorme
+
+document.addEventListener('mouseenter', () => { hovering = true; render(); });
+document.addEventListener('mouseleave', () => { hovering = false; render(); });
+document.addEventListener('contextmenu', (e) => { e.preventDefault(); cg.menu(); });
+let down = false;
+document.addEventListener('mousedown', (e) => { if (e.button === 0) { down = true; cg.dragStart(e.screenX, e.screenY); } });
+document.addEventListener('mousemove', (e) => { if (down) cg.dragMove(e.screenX, e.screenY); });
+document.addEventListener('mouseup', () => (down = false));
+</script></body></html>
