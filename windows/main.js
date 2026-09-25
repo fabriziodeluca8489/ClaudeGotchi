@@ -144,7 +144,7 @@ function createPet() {
 
 function openDashboard() {
   if (dash && !dash.isDestroyed()) return dash.focus();
-  dash = new BrowserWindow({ width: 1040, height: 700, minWidth: 900, minHeight: 620, title: 'ClaudeGotchi — Dashboard', backgroundColor: '#100e17', autoHideMenuBar: true, webPreferences: web });
+  dash = new BrowserWindow({ width: 1040, height: 700, minWidth: 900, minHeight: 620, title: 'ClaudeGotchi — Dashboard', backgroundColor: '#100e17', icon: path.join(__dirname, 'icon.png'), autoHideMenuBar: true, webPreferences: web });
   dash.loadFile('dashboard.html');
 }
 
@@ -189,8 +189,9 @@ ipcMain.on('beep', () => shell.beep());
 app.whenReady().then(() => {
   loadSettings();
   startServer();
+  if (process.platform === 'darwin') app.dock.setIcon(path.join(__dirname, 'icon.png'));
   createPet();
-  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'icon.png')).resize({ width: 16, height: 16 }));
+  tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'tray.png')).resize({ width: 16, height: 16 }));
   tray.setToolTip('ClaudeGotchi');
   tray.on('click', openDashboard);
   tray.on('right-click', () => tray.popUpContextMenu(buildMenu()));

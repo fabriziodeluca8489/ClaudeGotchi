@@ -24,7 +24,8 @@
     ],
     "win": {
       "target": "portable",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "icon": "icon.ico"
     },
     "portable": {
       "artifactName": "ClaudeGotchi.exe"
@@ -34,7 +35,8 @@
     },
     "mac": {
       "target": "zip",
-      "identity": null
+      "identity": null,
+      "icon": "icon.icns"
     }
   },
   "author": "Fabrizio De Luca",
