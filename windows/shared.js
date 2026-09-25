@@ -4,6 +4,7 @@
     { id: 'dev', label: 'Sviluppatore', prefix: '' },
     { id: 'bot', label: 'Robot', prefix: 'robot_' },
     { id: 'star', label: 'Star Puccioso', prefix: 'star_' },
+    { id: 'red', label: 'Peluche Rosso', prefix: 'red_' },
   ];
   const SIZES = [
     { id: 'small', label: 'Piccolo', scale: 0.75 },
@@ -74,7 +75,7 @@
     const def = ACTIVITIES.find((x) => x.id === a).sheet;
     return named(s.anim[p + a]) || named(p + def) || named(p + 'idle') || catalog[0];
   }
-  const fpsFor = (s, a) => s.fps[skinOf(s).prefix + a] || 8;
+  const fpsFor = (s, a) => s.fps[skinOf(s).prefix + a] || 3;
 
   // Righe statistiche scelte (max 3, come su Mac). Limite con reset passato = dato stantio -> "—".
   const compact = (n) => (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n));

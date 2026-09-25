@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # Importa una striscia orizzontale generata (sfondo trasparente) nel formato dell'app.
-# Uso: python3 tools/import_sprite.py <striscia.png> <nome> <frame> [--no-eyes]
+# Uso: python3 tools/import_sprite.py <striscia.png> <cartella/nome> <frame> [--no-eyes]
 #   --no-eyes: non riempie il bianco degli occhi (personaggi senza, es. robot)
-#   es. python3 tools/import_sprite.py ~/Downloads/error.png error 8
-# Scrive windows/assets/<nome>_1x<frame>.png.
+#   es. python3 tools/import_sprite.py ~/Downloads/error.png dev/error 8
+#   cartelle: dev, bot (nomi robot_*), star (star_*), red (red_*)
+# Scrive windows/assets/<cartella>/<nome>_1x<frame>.png.
 import re
 import sys
 from pathlib import Path
@@ -72,9 +73,12 @@ if __name__ == "__main__":
     if len(args) != 3:
         sys.exit("uso: import_sprite.py <striscia.png> <nome> <frame> [--no-eyes]")
     src, name, n = args[0], args[1], int(args[2])
-    for old in RES.glob(f"{name}_*.png"):
-        if re.fullmatch(rf"{re.escape(name)}_\d+x\d+", old.stem):
+    strip = slice_strip(Image.open(src).convert("RGBA"), n)  # prima di cancellare: se fallisce, il vecchio resta
+    dest = (RES / name).parent
+    stem = Path(name).name
+    for old in dest.glob(f"{stem}_*.png"):
+        if re.fullmatch(rf"{re.escape(stem)}_\d+x\d+", old.stem):
             old.unlink()  # un solo file per nome, altrimenti il catalogo li mostra doppi
-    out = RES / f"{name}_1x{n}.png"
-    slice_strip(Image.open(src).convert("RGBA"), n).save(out, optimize=True)
+    out = dest / f"{stem}_1x{n}.png"
+    strip.save(out, optimize=True)
     print("scritto", out)

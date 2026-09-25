@@ -9,7 +9,7 @@ so you notice even while working in another app.
 
 Hover over the character to see session stats: context tokens, output tokens and tools run.
 
-- 3 characters: **Developer**, **Robot**, **Star Puccioso**
+- 4 characters: **Developer**, **Robot**, **Star Puccioso**, **Peluche Rosso**
 - 9 animations (one per activity), with configurable sprites and FPS
 - Dashboard with live preview, sizes, backgrounds and choice of info to show
 - Built with **Electron**: runs on **Windows** and **macOS**
@@ -56,16 +56,16 @@ choose "More info" → "Run anyway" (the app is unsigned).
 
 ## Adding animations
 
-Animations are horizontal transparent strips in `windows/assets/`, named
+Animations are horizontal transparent strips in `windows/assets/<character>/` (`dev`, `bot`, `star`, `red`), named
 `<name>_<rows>x<columns>.png` (e.g. `idle_1x8.png`). The app reads the grid from the file name
 and lists them all in the dashboard. Default names per activity: `idle`, `sleep`, `reading`,
 `writing_code`, `terminal`, `working`, `waiting_permission`, `done`, `error`.
-Each character has a prefix: Developer none, Robot `robot_`, Star `star_`.
+Each character has a prefix: Developer none, Robot `robot_`, Star `star_`, Peluche Rosso `red_`.
 
 A raw strip (irregular or overlapping frames) can be imported with:
 
 ```bash
-python3 tools/import_sprite.py ~/Downloads/error.png error 8   # file, name, frame count
+python3 tools/import_sprite.py ~/Downloads/error.png dev/error 8   # file, folder/name, frame count
 ```
 
 The script cuts between characters, removes fragments of neighbouring frames, fills the eye

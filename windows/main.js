@@ -22,12 +22,13 @@ function saveSettings() {
   try { fs.mkdirSync(path.dirname(settingsFile()), { recursive: true }); fs.writeFileSync(settingsFile(), JSON.stringify(settings)); } catch {}
 }
 
-// ---------- Catalogo sprite: assets/<nome>_<righe>x<colonne>.png ----------
+// ---------- Catalogo sprite: assets/<personaggio>/<nome>_<righe>x<colonne>.png ----------
 function loadCatalog() {
-  return fs.readdirSync(path.join(__dirname, 'assets'))
-    .map((f) => f.match(/^(.+)_(\d+)x(\d+)\.png$/))
-    .filter(Boolean)
-    .map((m) => ({ file: m[0].slice(0, -4), name: m[1], rows: +m[2], cols: +m[3] }))
+  const root = path.join(__dirname, 'assets');
+  return fs.readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory())
+    .flatMap((d) => fs.readdirSync(path.join(root, d.name)).map((f) => [d.name, f.match(/^(.+)_(\d+)x(\d+)\.png$/)]))
+    .filter(([, m]) => m)
+    .map(([dir, m]) => ({ file: `${dir}/${m[0].slice(0, -4)}`, name: m[1], rows: +m[2], cols: +m[3] }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -192,6 +193,8 @@ function createPet() {
     alwaysOnTop: true, webPreferences: web,
   });
   pet.setAlwaysOnTop(true, 'screen-saver');
+  // Su macOS: visibile in tutti gli Spazi e sopra le app a schermo intero (nasconde l'icona dal Dock).
+  pet.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   pet.loadFile('pet.html');
 }
 
@@ -201,12 +204,32 @@ function openDashboard() {
   dash.loadFile('dashboard.html');
 }
 
+// ---------- Aggiornamenti ----------
+// Controlla l'ultima release su GitHub; se è più nuova della versione in uso, la voce compare nel menu.
+const RELEASES_API = 'https://api.github.com/repos/fabriziodeluca8489/ClaudeGotchi/releases/latest';
+const UPDATE_CHECK_MS = 6 * 3600 * 1000;
+let update = null;
+const newer = (a, b) => { // ponytail: solo X.Y.Z numerico, niente pre-release
+  const [x, y] = [a, b].map((v) => v.replace(/^v/, '').split('.').map(Number));
+  for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  return false;
+};
+async function checkUpdate() {
+  try {
+    const r = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' } });
+    if (!r.ok) return; // nessuna release o rate limit: silenzio
+    const { tag_name, html_url } = await r.json();
+    update = newer(tag_name, app.getVersion()) ? { tag: tag_name, url: html_url } : null;
+  } catch {} // offline: riprova al prossimo giro
+}
+
 function buildMenu() {
   const set = (p) => () => updateSettings(p);
   return Menu.buildFromTemplate([
     { label: 'Skin', submenu: CG.SKINS.map((s) => ({ label: s.label, type: 'radio', checked: settings.skin === s.id, click: set({ skin: s.id }) })) },
     { label: 'Dimensione', submenu: CG.SIZES.map((s) => ({ label: s.label, type: 'radio', checked: settings.size === s.id, click: set({ size: s.id }) })) },
     { label: 'Dashboard…', click: openDashboard },
+    ...(update ? [{ label: `⬆ Aggiornamento disponibile: ${update.tag}`, click: () => shell.openExternal(update.url) }] : []),
     { label: '☕ Dona con PayPal…', click: () => shell.openExternal(CG.DONATE_URL) },
     { type: 'separator' },
     hooksInstalled()
@@ -237,14 +260,15 @@ ipcMain.on('drag-move', (_, x, y) => {
 });
 ipcMain.on('menu', () => buildMenu().popup({ window: pet }));
 ipcMain.on('donate', () => shell.openExternal(CG.DONATE_URL));
-ipcMain.on('beep', () => shell.beep());
+// Su macOS shell.beep() (NSBeep) resta spesso muto da app in background: suona Glass come la vecchia versione Swift.
+ipcMain.on('beep', () => process.platform === 'darwin' ? execFile('afplay', ['/System/Library/Sounds/Glass.aiff'], () => {}) : shell.beep());
 
 app.whenReady().then(() => {
   loadSettings();
   startServer();
   loadRate(); fs.watchFile(rateFile(), { interval: 2000 }, loadRate);
   probeRate(); setInterval(probeRate, PROBE_MS);
-  if (process.platform === 'darwin') app.dock.setIcon(path.join(__dirname, 'icon.png'));
+  checkUpdate(); setInterval(checkUpdate, UPDATE_CHECK_MS);
   createPet();
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'tray.png')).resize({ width: 16, height: 16 }));
   tray.setToolTip('ClaudeGotchi');
