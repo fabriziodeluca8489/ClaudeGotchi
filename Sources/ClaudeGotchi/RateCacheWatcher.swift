@@ -92,7 +92,9 @@ final class RateCacheWatcher: ObservableObject {
     private func probe() {
         queue.async { [url] in
             let mtime = (try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) ?? .distantPast
-            guard Date().timeIntervalSince(mtime) >= Self.probeInterval else { return }
+            // Un file senza orari di reset (statusline senza rate_limits) vale come vecchio.
+            let hasResets = ((try? JSONDecoder().decode(RateCache.self, from: Data(contentsOf: url)))?.r5ResetsAt ?? 0) > 0
+            guard Date().timeIntervalSince(mtime) >= Self.probeInterval || !hasResets else { return }
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/bin/zsh")
             // Shell di login: un'app grafica non ha il PATH dove sta `claude`.

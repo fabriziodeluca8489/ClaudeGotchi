@@ -49,7 +49,7 @@ const PROBE_MS = 10 * 60 * 1000;
 function probeRate() {
   let mtime = 0;
   try { mtime = fs.statSync(rateFile()).mtimeMs; } catch {}
-  if (Date.now() - mtime < PROBE_MS) return;
+  if (Date.now() - mtime < PROBE_MS && rate.r5ResetsAt > 0) return; // senza orari di reset il dato vale come vecchio
   execFile('claude', ['-p', 'ok', '--model', 'haiku', '--setting-sources', '', '--output-format', 'stream-json', '--verbose'],
     { cwd: os.tmpdir(), timeout: 60000, maxBuffer: 1 << 24, shell: process.platform === 'win32' }, (err, out) => {
       const line = String(out || '').split('\n').find((l) => l.includes('"rate_limit_event"'));
