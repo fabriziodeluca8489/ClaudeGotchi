@@ -3,7 +3,7 @@
 # Uso: python3 tools/import_sprite.py <striscia.png> <nome> <frame> [--no-eyes]
 #   --no-eyes: non riempie il bianco degli occhi (personaggi senza, es. robot)
 #   es. python3 tools/import_sprite.py ~/Downloads/error.png error 8
-# Scrive Sources/ClaudeGotchi/Resources/<nome>_1x<frame>.png; poi ./build_app.sh.
+# Scrive windows/assets/<nome>_1x<frame>.png.
 import re
 import sys
 from pathlib import Path
@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-RES = Path(__file__).resolve().parent.parent / "Sources/ClaudeGotchi/Resources"
+RES = Path(__file__).resolve().parent.parent / "windows/assets"
 PAD = 8
 HOLE_MAX = 4000  # buchi trasparenti chiusi più piccoli di così = bianco degli occhi
 # ponytail: fascia occhi fissa (y 45-57% dell'altezza), tarata sulle strisce chibi attuali
