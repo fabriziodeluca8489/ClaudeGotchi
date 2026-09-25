@@ -207,7 +207,7 @@ function openDashboard() {
 // ---------- Aggiornamenti ----------
 // Controlla l'ultima release su GitHub; se è più nuova della versione in uso, la voce compare nel menu.
 const RELEASES_API = 'https://api.github.com/repos/fabriziodeluca8489/ClaudeGotchi/releases/latest';
-const UPDATE_CHECK_MS = 6 * 3600 * 1000;
+const UPDATE_CHECK_MS = 30 * 60 * 1000;
 let update = null;
 const newer = (a, b) => { // ponytail: solo X.Y.Z numerico, niente pre-release
   const [x, y] = [a, b].map((v) => v.replace(/^v/, '').split('.').map(Number));
