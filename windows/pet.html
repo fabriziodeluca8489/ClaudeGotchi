@@ -6,9 +6,16 @@
           display: flex; flex-direction: column; align-items: center; gap: 4px; color: #888; }
   #sprite { width: 96px; height: 96px; }
   #info { font-size: 10px; font-weight: 500; text-align: center; white-space: nowrap; }
-  #stats { width: 100%; font: 9px Consolas, monospace; display: none; }
-  #stats div { display: flex; gap: 4px; }
-  #stats span:first-child { width: 22px; }
+  /* spazio sotto lo sprite: ~36px, quindi righe compatte e barra dentro la riga */
+  #stats { width: 100%; box-sizing: border-box; margin-top: -2px; padding: 2px 6px; border-radius: 8px; display: none;
+           background: rgba(16,14,23,.82); box-shadow: 0 2px 6px rgba(0,0,0,.35); color: #e8e6f0;
+           font: 9px Consolas, monospace; animation: pop .15s ease-out; }
+  #stats .row { display: flex; align-items: baseline; gap: 4px; line-height: 10px; padding-bottom: 1px;
+                background: no-repeat 0 100% / var(--p, 0) 1px var(--c, transparent); }
+  #stats .k { width: 20px; color: #9a96a8; text-transform: uppercase; font-size: 8px; }
+  #stats .v { font-weight: 700; }
+  #stats .r { margin-left: auto; color: #9a96a8; }
+  @keyframes pop { from { opacity: 0; transform: translateY(3px); } }
   .celebrate #sprite { animation: jump .5s ease-in-out 3, flash .3s 4; }
   @keyframes jump { 50% { transform: translateY(-14px); } }
   @keyframes flash { 50% { filter: brightness(1.6); } }
@@ -43,7 +50,13 @@ function render() {
   const stats = document.getElementById('stats'), info = document.getElementById('info');
   const showStats = S.showStats && rows.length && (hovering || S.statsAlways);
   stats.style.display = showStats ? 'block' : 'none';
-  stats.innerHTML = rows.map((r) => `<div><span>${r[0]}</span><span>${r[1]}</span><span style="margin-left:auto;opacity:.6">${r[2]}</span></div>`).join('');
+  stats.innerHTML = rows.map(([k, v, r]) => {
+    // i limiti (5h/7d) hanno una percentuale numerica: mostra anche la barra
+    const pct = /^(5h|7d)$/.test(k) && /^\d+(\.\d+)?$/.test(v) ? Math.min(Math.round(v), 100) : null;
+    const c = pct >= 90 ? '#f85149' : pct >= 70 ? '#e3b341' : '#7ee787';
+    const bar = pct === null ? '' : ` style="--p:${pct}%;--c:linear-gradient(${c},${c})"`;
+    return `<div class="row"${bar}><span class="k">${k}</span><span class="v">${pct === null ? v : pct + '%'}</span><span class="r">${r}</span></div>`;
+  }).join('');
   info.style.display = !showStats && S.info.includes('caption') ? 'block' : 'none';
   info.textContent = caption();
 }
