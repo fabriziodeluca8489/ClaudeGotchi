@@ -134,7 +134,8 @@ function startServer() {
 // ---------- Hook in ~/.claude/settings.json ----------
 const settingsPath = () => path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'settings.json');
 const CURL = process.platform === 'win32' ? 'curl.exe' : 'curl';
-const hookCmd = (ev) => `${CURL} -s -m 2 -X POST --data-binary @- "http://127.0.0.1:${PORT}/hook/${ev}?${MARK}"`;
+// "; exit 0": se l'app è chiusa curl fallisce, ma l'hook non deve segnalare errori a Claude Code.
+const hookCmd = (ev) => `${CURL} -s -m 2 -X POST --data-binary @- "http://127.0.0.1:${PORT}/hook/${ev}?${MARK}"; exit 0`;
 
 function readClaudeSettings() {
   try { return JSON.parse(fs.readFileSync(settingsPath(), 'utf8')); } catch { return {}; }
@@ -176,6 +177,11 @@ function patchHooks(add) {
 function hooksInstalled() {
   const hooks = readClaudeSettings().hooks || {};
   return Object.keys(EVENTS).every((e) => (hooks[e] || []).some((g) => (g.hooks || []).some(isOurs)));
+}
+// Hook installati da versioni precedenti (comando diverso): li riscrive.
+function hooksStale() {
+  const hooks = readClaudeSettings().hooks || {};
+  return Object.entries(EVENTS).some(([e, ev]) => (hooks[e] || []).some((g) => (g.hooks || []).some((h) => isOurs(h) && h.command !== hookCmd(ev))));
 }
 
 // ---------- Finestre ----------
@@ -276,5 +282,6 @@ app.whenReady().then(() => {
   tray.on('right-click', () => tray.popUpContextMenu(buildMenu()));
   // Al primo avvio apre la dashboard, dove si installano gli hook.
   if (!hooksInstalled()) openDashboard();
+  else if (hooksStale()) patchHooks(true);
 });
 app.on('window-all-closed', (e) => e.preventDefault()); // resta nel tray
