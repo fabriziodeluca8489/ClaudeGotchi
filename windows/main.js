@@ -3,8 +3,18 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
-const { execFile } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 const CG = require('./shared');
+
+// macOS: aperta dal Finder l'app ha PATH minimo (/usr/bin:/bin...) e non trova `claude`.
+// Prende il PATH dalla shell dell'utente (interattiva+login, come il Terminale).
+if (process.platform === 'darwin') {
+  try {
+    const out = execFileSync(process.env.SHELL || '/bin/zsh', ['-ilc', 'echo "__P__$PATH"'], { encoding: 'utf8', timeout: 5000 });
+    const p = (out.match(/__P__(.*)/) || [])[1];
+    if (p) process.env.PATH = p;
+  } catch {}
+}
 
 const PORT = 47823;
 const MARK = 'app=claudegotchi'; // riconosce le nostre voci in settings.json
