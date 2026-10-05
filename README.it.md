@@ -13,6 +13,7 @@ token di output e tool eseguiti.
 - 4 personaggi: **Sviluppatore**, **Robot**, **Star Puccioso**, **Peluche Rosso**
 - 9 animazioni (una per attività), con sprite e FPS configurabili
 - Dashboard con anteprima live e scelta di dimensioni, sfondi e informazioni da mostrare
+- Interfaccia in **italiano o inglese**, in base alla lingua del sistema
 - Realizzato con **Electron**: funziona su **Windows** e **macOS**
 
 ## Come funziona

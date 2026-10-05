@@ -12,6 +12,7 @@ Hover over the character to see session stats: context tokens, output tokens and
 - 4 characters: **Developer**, **Robot**, **Star Puccioso**, **Peluche Rosso**
 - 9 animations (one per activity), with configurable sprites and FPS
 - Dashboard with live preview, sizes, backgrounds and choice of info to show
+- Interface in **Italian or English**, following the system language
 - Built with **Electron**: runs on **Windows** and **macOS**
 
 ## How it works
@@ -43,7 +44,7 @@ Launch the app: the Dashboard opens on first run. In the *Claude Code* section c
 then **restart any Claude Code sessions already open**. If Windows SmartScreen warns you,
 choose "More info" → "Run anyway" (the app is unsigned).
 
-> The app interface is currently in Italian.
+> The app interface follows the system language: Italian on Italian systems, English everywhere else.
 
 ## Usage
 

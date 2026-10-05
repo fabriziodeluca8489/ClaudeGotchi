@@ -1,0 +1,42 @@
+/* Token di design condivisi da dashboard e pet. Sincronizzati con Claude Design (styles.css). */
+:root {
+  /* Superfici */
+  --bg: #100e17;
+  --bg-glow-1: #4a2d63;
+  --bg-glow-2: #2a2350;
+  --panel: rgba(20,17,30,.55);
+  --chip: rgba(16,14,23,.82);
+  --surface: rgba(255,255,255,.04);
+  --surface-2: rgba(255,255,255,.07);
+  --surface-hover: rgba(255,255,255,.14);
+  --line: rgba(255,255,255,.08);
+  --line-strong: rgba(255,255,255,.12);
+
+  /* Testo e accento */
+  --text: #ecebf2;
+  --chip-text: #e8e6f0;
+  --mut: #9a96a8;
+  --acc: #8b7cf6;
+  --acc-soft: #c9bfff;
+
+  /* Colori di stato (specchio di CG.TINT in shared.js) */
+  --st-idle: #4dc7b3;
+  --st-working: #528cf2;
+  --st-waiting: #f2a640;
+  --st-done: #59cc66;
+  --st-error: #e65959;
+  --st-off: #888;
+
+  /* Barre limiti 5h/7d (usate in pet.html via JS) */
+  --lim-ok: #7ee787;
+  --lim-warn: #e3b341;
+  --lim-bad: #f85149;
+
+  /* Forma e tipografia */
+  --r-panel: 20px;
+  --r-card: 14px;
+  --r-input: 9px;
+  --r-pill: 99px;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: Consolas, monospace;
+}

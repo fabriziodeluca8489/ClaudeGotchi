@@ -1,46 +1,55 @@
 // Definizioni condivise tra processo main e finestre (skin, attività, default).
 (function (root) {
-  const SKINS = [
-    { id: 'dev', label: 'Sviluppatore', prefix: '' },
-    { id: 'bot', label: 'Robot', prefix: 'robot_' },
-    { id: 'star', label: 'Star Puccioso', prefix: 'star_' },
-    { id: 'red', label: 'Peluche Rosso', prefix: 'red_' },
-  ];
-  const SIZES = [
-    { id: 'small', label: 'Piccolo', scale: 0.75 },
-    { id: 'medium', label: 'Medio', scale: 1 },
-    { id: 'large', label: 'Grande', scale: 1.5 },
-    { id: 'xlarge', label: 'Molto grande', scale: 2 },
-  ];
-  const ACTIVITIES = [
-    { id: 'idle', label: 'In attesa', sheet: 'idle' },
-    { id: 'sleeping', label: 'Dorme (inattivo)', sheet: 'sleep' },
-    { id: 'reading', label: 'Legge (Read/Grep/Glob)', sheet: 'reading' },
-    { id: 'writing', label: 'Scrive (Edit/Write)', sheet: 'writing_code' },
-    { id: 'bash', label: 'Terminale (Bash)', sheet: 'terminal' },
-    { id: 'working', label: 'Al lavoro (altri tool)', sheet: 'working' },
-    { id: 'waiting', label: 'Attende permesso', sheet: 'waiting_permission' },
-    { id: 'done', label: 'Finito', sheet: 'done' },
-    { id: 'error', label: 'Errore', sheet: 'error' },
-  ];
+  // Lingua UI: italiano se il sistema è in italiano, altrimenti inglese.
+  // Renderer: navigator.language; main: setLang(app.getLocale()) quando l'app è pronta.
+  let lang = 'en';
+  const setLang = (l) => { lang = /^it/i.test(l || '') ? 'it' : 'en'; };
+  if (typeof navigator !== 'undefined') setLang(navigator.language);
+  const tr = (it, en) => (lang === 'it' ? it : en);
+  // label calcolata al momento dell'uso, nella lingua corrente
+  const labeled = (arr) => arr.map((o) => Object.defineProperty(o, 'label', { get: () => tr(o.it, o.en) }));
+
+  const SKINS = labeled([
+    { id: 'dev', it: 'Sviluppatore', en: 'Developer', prefix: '' },
+    { id: 'bot', it: 'Robot', en: 'Robot', prefix: 'robot_' },
+    { id: 'star', it: 'Star Puccioso', en: 'Star Puccioso', prefix: 'star_' },
+    { id: 'red', it: 'Peluche Rosso', en: 'Peluche Rosso', prefix: 'red_' },
+  ]);
+  const SIZES = labeled([
+    { id: 'small', it: 'Piccolo', en: 'Small', scale: 0.75 },
+    { id: 'medium', it: 'Medio', en: 'Medium', scale: 1 },
+    { id: 'large', it: 'Grande', en: 'Large', scale: 1.5 },
+    { id: 'xlarge', it: 'Molto grande', en: 'Extra large', scale: 2 },
+  ]);
+  const ACTIVITIES = labeled([
+    { id: 'idle', it: 'In attesa', en: 'Idle', sheet: 'idle' },
+    { id: 'sleeping', it: 'Dorme (inattivo)', en: 'Sleeping (inactive)', sheet: 'sleep' },
+    { id: 'reading', it: 'Legge (Read/Grep/Glob)', en: 'Reading (Read/Grep/Glob)', sheet: 'reading' },
+    { id: 'writing', it: 'Scrive (Edit/Write)', en: 'Writing (Edit/Write)', sheet: 'writing_code' },
+    { id: 'bash', it: 'Terminale (Bash)', en: 'Terminal (Bash)', sheet: 'terminal' },
+    { id: 'working', it: 'Al lavoro (altri tool)', en: 'Working (other tools)', sheet: 'working' },
+    { id: 'waiting', it: 'Attende permesso', en: 'Waiting for permission', sheet: 'waiting_permission' },
+    { id: 'done', it: 'Finito', en: 'Done', sheet: 'done' },
+    { id: 'error', it: 'Errore', en: 'Error', sheet: 'error' },
+  ]);
   const DONATE_URL = 'https://paypal.me/FabrizioDeLuca89';
   const TINT = { idle: '#4dc7b3', working: '#528cf2', waiting: '#f2a640', done: '#59cc66', error: '#e65959' };
-  const BGS = [
-    { id: 'stato', label: 'Stato' },
-    { id: 'notte', label: 'Notte', color: '#141424' },
-    { id: 'nebbia', label: 'Nebbia', color: '#e0e0eb' },
-  ];
-  const INFO = [
-    { id: 'caption', label: 'Didascalia stato' },
-    { id: 'tool', label: 'Nome tool in uso' },
-    { id: 'ctxTokens', label: 'Token contesto' },
-    { id: 'outTokens', label: 'Token output' },
-    { id: 'toolCalls', label: 'Tool calls' },
-    { id: 'limit5h', label: 'Limite 5h' },
-    { id: 'limit7d', label: 'Limite 7 giorni' },
-    { id: 'ctxPct', label: 'Contesto %' },
-    { id: 'model', label: 'Modello' },
-  ];
+  const BGS = labeled([
+    { id: 'stato', it: 'Stato', en: 'Status' },
+    { id: 'notte', it: 'Notte', en: 'Night', color: '#141424' },
+    { id: 'nebbia', it: 'Nebbia', en: 'Fog', color: '#e0e0eb' },
+  ]);
+  const INFO = labeled([
+    { id: 'caption', it: 'Didascalia stato', en: 'Status caption' },
+    { id: 'tool', it: 'Nome tool in uso', en: 'Current tool name' },
+    { id: 'ctxTokens', it: 'Token contesto', en: 'Context tokens' },
+    { id: 'outTokens', it: 'Token output', en: 'Output tokens' },
+    { id: 'toolCalls', it: 'Tool calls', en: 'Tool calls' },
+    { id: 'limit5h', it: 'Limite 5h', en: '5h limit' },
+    { id: 'limit7d', it: 'Limite 7 giorni', en: '7-day limit' },
+    { id: 'ctxPct', it: 'Contesto %', en: 'Context %' },
+    { id: 'model', it: 'Modello', en: 'Model' },
+  ]);
   const DEFAULTS = {
     skin: 'dev', size: 'medium', showStats: true, statsAlways: false,
     bgTransparent: true, bgColor: 'stato', anim: {}, fps: {},
@@ -99,6 +108,6 @@
     return Object.keys(all).filter((k) => info.includes(k)).slice(0, 3).map((k) => all[k]());
   }
 
-  const api = { statRows, DONATE_URL, SKINS, SIZES, ACTIVITIES, TINT, BGS, INFO, DEFAULTS, skinOf, sizeOf, activityFrom, sheetFor, fpsFor };
+  const api = { tr, setLang, statRows, DONATE_URL, SKINS, SIZES, ACTIVITIES, TINT, BGS, INFO, DEFAULTS, skinOf, sizeOf, activityFrom, sheetFor, fpsFor };
   if (typeof module !== 'undefined') module.exports = api; else root.CG = api;
 })(this);

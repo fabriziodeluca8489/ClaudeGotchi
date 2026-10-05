@@ -1,0 +1,7 @@
+{
+  "projectId": "89f4e09c-7631-4de6-b934-56a1a635bb97",
+  "pkg": "windows",
+  "shape": "handmade",
+  "readmeHeader": ".design-sync/conventions.md",
+  "build": "sh .design-sync/build.sh"
+}

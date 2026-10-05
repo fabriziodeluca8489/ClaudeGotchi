@@ -1,0 +1,25 @@
+/* Stili della finestra del personaggio. Usa i token di theme.css. */
+#root { width: 120px; height: 150px; box-sizing: border-box; padding: 8px; border-radius: 18px;
+        display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--st-off); }
+#sprite { width: 96px; height: 96px; }
+/* pillola di stato: stesso stile del riquadro stats, pallino col colore dello stato */
+#info { max-width: 100%; box-sizing: border-box; padding: 3px 8px 3px 6px; border-radius: var(--r-pill); display: none;
+        background: var(--chip); box-shadow: 0 2px 6px rgba(0,0,0,.35); color: var(--chip-text);
+        font-size: 10px; font-weight: 600; line-height: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#info i { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; vertical-align: 1px;
+          background: var(--c); box-shadow: 0 0 5px var(--c); }
+#info.working i { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+/* spazio sotto lo sprite: ~36px, quindi righe compatte e barra dentro la riga */
+#stats { width: 100%; box-sizing: border-box; margin-top: -2px; padding: 2px 6px; border-radius: 8px; display: none;
+         background: var(--chip); box-shadow: 0 2px 6px rgba(0,0,0,.35); color: var(--chip-text);
+         font: 9px var(--font-mono); animation: pop .15s ease-out; }
+#stats .row { display: flex; align-items: baseline; gap: 4px; line-height: 10px; padding-bottom: 1px;
+              background: no-repeat 0 100% / var(--p, 0) 1px var(--c, transparent); }
+#stats .k { width: 20px; color: var(--mut); text-transform: uppercase; font-size: 8px; }
+#stats .v { font-weight: 700; }
+#stats .r { margin-left: auto; color: var(--mut); }
+@keyframes pop { from { opacity: 0; transform: translateY(3px); } }
+.celebrate #sprite { animation: jump .5s ease-in-out 3, flash .3s 4; }
+@keyframes jump { 50% { transform: translateY(-14px); } }
+@keyframes flash { 50% { filter: brightness(1.6); } }

@@ -6,3 +6,5 @@ node_modules/
 dist/
 resource/
 __pycache__/
+ds-bundle/
+.design-sync/shots/

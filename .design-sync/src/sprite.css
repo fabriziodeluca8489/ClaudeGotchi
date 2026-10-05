@@ -1,0 +1,6 @@
+/* Solo per Claude Design: anima una striscia sprite 1xN in puro CSS (l'app usa sprite.js).
+   background-image va inline: un url() dentro una custom property si risolve rispetto a questo file.
+   Uso: <div class="sprite" style="background-image:url(assets/dev/idle_1x25.png);--n:25;--fps:8;width:92px;aspect-ratio:230/247"></div> */
+.sprite { background-repeat: no-repeat; background-size: calc(var(--n) * 100%) 100%;
+          animation: sprite-play calc(var(--n) / var(--fps, 8) * 1s) steps(calc(var(--n) - 1), jump-none) infinite; }
+@keyframes sprite-play { from { background-position: 0 0; } to { background-position: 100% 0; } }

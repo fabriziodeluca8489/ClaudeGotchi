@@ -243,16 +243,16 @@ function buildMenu() {
   const set = (p) => () => updateSettings(p);
   return Menu.buildFromTemplate([
     { label: 'Skin', submenu: CG.SKINS.map((s) => ({ label: s.label, type: 'radio', checked: settings.skin === s.id, click: set({ skin: s.id }) })) },
-    { label: 'Dimensione', submenu: CG.SIZES.map((s) => ({ label: s.label, type: 'radio', checked: settings.size === s.id, click: set({ size: s.id }) })) },
+    { label: CG.tr('Dimensione', 'Size'), submenu: CG.SIZES.map((s) => ({ label: s.label, type: 'radio', checked: settings.size === s.id, click: set({ size: s.id }) })) },
     { label: 'Dashboard…', click: openDashboard },
-    ...(update ? [{ label: `⬆ Aggiornamento disponibile: ${update.tag}`, click: () => shell.openExternal(update.url) }] : []),
-    { label: '☕ Dona con PayPal…', click: () => shell.openExternal(CG.DONATE_URL) },
+    ...(update ? [{ label: `⬆ ${CG.tr('Aggiornamento disponibile', 'Update available')}: ${update.tag}`, click: () => shell.openExternal(update.url) }] : []),
+    { label: CG.tr('☕ Dona con PayPal…', '☕ Donate with PayPal…'), click: () => shell.openExternal(CG.DONATE_URL) },
     { type: 'separator' },
     hooksInstalled()
-      ? { label: 'Rimuovi hook Claude Code', click: () => patchHooks(false) }
-      : { label: 'Installa hook Claude Code', click: () => patchHooks(true) },
+      ? { label: CG.tr('Rimuovi hook Claude Code', 'Remove Claude Code hooks'), click: () => patchHooks(false) }
+      : { label: CG.tr('Installa hook Claude Code', 'Install Claude Code hooks'), click: () => patchHooks(true) },
     { type: 'separator' },
-    { label: 'Esci', click: () => app.quit() },
+    { label: CG.tr('Esci', 'Quit'), click: () => app.quit() },
   ]);
 }
 
@@ -280,6 +280,7 @@ ipcMain.on('donate', () => shell.openExternal(CG.DONATE_URL));
 ipcMain.on('beep', () => process.platform === 'darwin' ? execFile('afplay', ['/System/Library/Sounds/Glass.aiff'], () => {}) : shell.beep());
 
 app.whenReady().then(() => {
+  CG.setLang(app.getLocale()); // stessa lingua di navigator.language nelle finestre
   loadSettings();
   startServer();
   loadRate(); fs.watchFile(rateFile(), { interval: 2000 }, loadRate);
